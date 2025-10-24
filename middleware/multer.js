@@ -1,4 +1,5 @@
 const multer = require('multer');
+const sharp = require('sharp');
 
 const MIME_TYPES = {
   'image/jpg': 'jpg',
@@ -17,4 +18,36 @@ const storage = multer.diskStorage({
   }
 });
 
-module.exports = multer({storage: storage}).single('image');
+const upload = multer({ storage: storage }).single('image');
+
+const multerSharp = (req, res, next) => {
+  upload(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    if (!req.file) return next();
+
+    try {
+        
+      const compressedPath = `images/compressed_${req.file.filename}`;
+      
+      await sharp(req.file.path)
+        .resize(800)                
+        .jpeg({ quality: 80 })      
+        .toFile(compressedPath);
+      
+      
+      fs.unlinkSync(req.file.path);
+      
+      
+      req.file.filename = 'compressed_' + req.file.filename;
+      next();
+    } catch (error) {
+      console.error('Erreur Sharp :', error);
+      res.status(500).json({ error: 'Erreur de compression image' });
+    }
+  });
+};
+
+module.exports = multerSharp;
