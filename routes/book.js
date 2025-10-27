@@ -1,8 +1,7 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const bookCtrl = require('../controllers/book')
-const multer = require('../middleware/multer')
-const ratings = require('../controllers/rating')
+const multerSharp = require('../middleware/multer')
 
 const router = express.Router();
 

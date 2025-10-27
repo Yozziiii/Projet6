@@ -29,6 +29,14 @@ exports.createBook = (req, res, next) => {
     delete bookObject._userId;
     Book.findOne({_id: req.params.id})
         .then((book) => {
+            const filename = book.imageUrl.split('/images/')
+            if(filename[1] && req.file) {
+                fs.unlink(`images/${filename[1]}`, (error => {
+                    if(error){
+                        console.log(error)
+                    }
+                }));
+            }
             if (book.userId != req.auth.userId) {
                 res.status(401).json({ message : 'Not authorized'});
             } else {
@@ -72,3 +80,36 @@ exports.getAllBook =  (req, res, next) => {
       .then(books => res.status(200).json(books))
       .catch(error => res.status(400).json({ error }));
   };
+
+exports.rating =  async (req, res) => {
+    try {
+      const bookId = req.params.id;
+      const userId = req.auth.userId;
+      const { rating } = req.body;
+  
+      if (typeof rating !== 'number' || rating < 0 || rating > 5) {
+        return res.status(400).json({ message: 'Rating invalide (doit être un nombre entre 0 et 5).' });
+      }
+  
+      const book = await Book.findById(bookId);
+
+      if (!book) return res.status(404).json({ message: 'Livre non trouvé' });
+  
+      const existingRating = book.ratings.find(r => r.userId.toString() === userId);
+      if (existingRating) return res.status(400).json({ message: 'Vous avez déjà noté ce livre.' });
+  
+      book.ratings.push({ userId, grade: rating });
+      const total = book.ratings.reduce((acc, cur) => acc + cur.grade, 0);
+
+      book.averageRating = total / book.ratings.length;
+
+  
+      await book.save();
+        return res.status(200).json( book );
+
+    } catch (err) {
+      console.error(err);
+        return res.status(500).json({ message: 'Erreur serveur' });
+    }
+  };
+  
