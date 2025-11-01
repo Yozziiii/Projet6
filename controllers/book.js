@@ -2,7 +2,6 @@ const Book = require('../models/book');
 const fs = require('fs');
 
 exports.createBook = (req, res, next) => {
-    console.log('req.file:', req.file);
 
         const bookObject = JSON.parse(req.body.book);
         delete bookObject._id;
@@ -80,6 +79,15 @@ exports.getAllBook =  (req, res, next) => {
       .then(books => res.status(200).json(books))
       .catch(error => res.status(400).json({ error }));
   };
+  
+  exports.getBestRating = (req, res, next) => {
+    Book.find()
+      .sort({ averageRating: -1 })
+      .limit(3)
+      .then(books => res.status(200).json(books))
+      .catch(error => res.status(400).json({ error }));
+  };
+  
 
 exports.rating =  async (req, res) => {
     try {
@@ -87,7 +95,7 @@ exports.rating =  async (req, res) => {
       const userId = req.auth.userId;
       const { rating } = req.body;
   
-      if (typeof rating !== 'number' || rating < 0 || rating > 5) {
+      if (typeof rating !== 'number' || rating < 1 || rating > 5) {
         return res.status(400).json({ message: 'Rating invalide (doit être un nombre entre 0 et 5).' });
       }
   
